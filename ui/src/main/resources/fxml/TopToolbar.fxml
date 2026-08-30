@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.jsoftsip.ui.controller.TopToolbarController"
+      spacing="6"
+      alignment="CENTER_LEFT">
+
+    <Button fx:id="btnSettings"
+            prefWidth="70"/>
+
+    <Label fx:id="volumeIcon"/>
+
+    <Slider fx:id="volumeSlider"
+            maxWidth="150"/>
+
+    <Label fx:id="microphoneIcon"/>
+
+    <Slider fx:id="microphoneSlider"
+            maxWidth="150"/>
+
+    <Pane HBox.hgrow="ALWAYS"/>
+
+    <Button fx:id="btnDialer"
+            prefWidth="70"/>
+
+</HBox>

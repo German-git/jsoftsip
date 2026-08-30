@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.jsoftsip.ui.controller.HistoryPaneController">
+
+    <center>
+
+        <TitledPane text="%history.title"
+                    expanded="true"
+                    maxHeight="Infinity"
+                    fx:id="historyTitle">
+
+            <content>
+                <ListView fx:id="historyListView"/>
+            </content>
+
+        </TitledPane>
+
+    </center>
+
+</BorderPane>

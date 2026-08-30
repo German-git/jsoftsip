@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.jsoftsip.ui.controller.ActiveCallsPaneController">
+
+    <padding>
+        <Insets top="5"
+                right="5"
+                bottom="5"
+                left="5"/>
+    </padding>
+
+    <top>
+
+        <Label text="%active.calls.title" fx:id="titleLabel">
+
+            <padding>
+                <Insets bottom="4"/>
+            </padding>
+
+        </Label>
+
+    </top>
+
+    <center>
+
+        <ListView fx:id="activeCallsListView"
+                  minWidth="300"
+                  minHeight="250"/>
+
+    </center>
+
+</BorderPane>

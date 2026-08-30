@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml">
+
+    <padding>
+        <Insets top="6"
+                right="6"
+                bottom="6"
+                left="6"/>
+    </padding>
+
+    <center>
+
+        <SplitPane dividerPositions="0.35">
+
+            <VBox styleClass="split-left"
+                  minWidth="250"
+                  prefWidth="280"
+                  maxWidth="400"
+                  spacing="6">
+
+                <fx:include source="AccountsPane.fxml"
+                            VBox.vgrow="ALWAYS"/>
+
+                <fx:include source="HistoryPane.fxml"
+                            VBox.vgrow="ALWAYS"/>
+
+            </VBox>
+
+            <VBox styleClass="split-right"
+                  spacing="6">
+
+                <fx:include source="TopToolbar.fxml"/>
+
+                <fx:include source="ActiveCallsPane.fxml"
+                            VBox.vgrow="ALWAYS"/>
+
+            </VBox>
+
+        </SplitPane>
+
+    </center>
+
+</BorderPane>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Keep unit test output clean: the facade emission tests
+         attach their own ListAppender and pin levels explicitly -->
+    <root level="OFF"/>
+</configuration>

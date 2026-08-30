@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jsoftsip</groupId>
+        <artifactId>jsoftsip</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>launcher</artifactId>
+
+    <dependencies>
+        <!-- Internal modules -->
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>native-bridge</artifactId>
+        </dependency>
+
+        <!-- JavaFX -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+        </dependency>
+
+        <!-- Testing: compile-scope + optional so the module-info can declare
+             requires static org.junit.jupiter.api, enabling test execution
+             from both Maven and IntelliJ without leaking JUnit into production
+             or native image builds (non-transitive). -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.jsoftsip.launcher/com.jsoftsip.launcher.JSoftSipApplication</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- JUnit is test-scope; allow the launcher module to read it from the module path. -->
+                    <argLine>
+                        <!-- JUnit is compile-scope on the module path; tests run
+                             from the unnamed module. Allow the platform to open
+                             its own internal packages used by reflection. -->
+                        --add-opens org.junit.platform.commons/org.junit.platform.commons.logging=ALL-UNNAMED
+                        --add-opens org.junit.platform.commons/org.junit.platform.commons.util=ALL-UNNAMED
+                    </argLine>
+                    <!-- ConfigDirectoryResolver honors XDG_CONFIG_HOME before
+                         user.home; tests mutate user.home for isolation, so the
+                         fork must not inherit a real XDG config dir -->
+                    <environmentVariables>
+                        <XDG_CONFIG_HOME></XDG_CONFIG_HOME>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

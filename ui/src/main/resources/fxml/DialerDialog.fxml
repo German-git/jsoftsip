@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.jsoftsip.ui.controller.DialerDialogController"
+      spacing="8"
+      alignment="TOP_CENTER">
+
+    <padding>
+        <Insets top="6"
+                right="6"
+                bottom="6"
+                left="6"/>
+    </padding>
+
+    <Label fx:id="lblAccount"/>
+
+    <TextField fx:id="txtDestination"
+               promptText="%dialer.prompt"
+               maxWidth="Infinity"/>
+
+    <!-- Container to center the keypad -->
+    <HBox alignment="CENTER">
+        <GridPane styleClass="dialer-grid"
+                  alignment="CENTER">
+
+            <Button fx:id="btn1" text="1"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="0"
+                    GridPane.columnIndex="0"/>
+
+            <Button fx:id="btn2" text="2"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="0"
+                    GridPane.columnIndex="1"/>
+
+            <Button fx:id="btn3" text="3"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="0"
+                    GridPane.columnIndex="2"/>
+
+            <Button fx:id="btn4" text="4"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="1"
+                    GridPane.columnIndex="0"/>
+
+            <Button fx:id="btn5" text="5"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="1"
+                    GridPane.columnIndex="1"/>
+
+            <Button fx:id="btn6" text="6"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="1"
+                    GridPane.columnIndex="2"/>
+
+            <Button fx:id="btn7" text="7"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="2"
+                    GridPane.columnIndex="0"/>
+
+            <Button fx:id="btn8" text="8"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="2"
+                    GridPane.columnIndex="1"/>
+
+            <Button fx:id="btn9" text="9"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="2"
+                    GridPane.columnIndex="2"/>
+
+            <Button fx:id="btnStar" text="*"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="3"
+                    GridPane.columnIndex="0"/>
+
+            <Button fx:id="btn0" text="0"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="3"
+                    GridPane.columnIndex="1"/>
+
+            <Button fx:id="btnHash" text="#"
+                    styleClass="dialer-numpad"
+                    GridPane.rowIndex="3"
+                    GridPane.columnIndex="2"/>
+
+        </GridPane>
+    </HBox>
+
+    <!-- Container to center the bottom buttons -->
+    <HBox spacing="4"
+          alignment="CENTER">
+
+        <Button fx:id="btnDelete"
+                 text="&#x232B;"
+                 prefWidth="70"/>
+
+        <Button fx:id="btnCall"
+                 prefWidth="70"/>
+
+        <Button fx:id="btnHangup"
+                 prefWidth="70"/>
+
+    </HBox>
+
+</VBox>

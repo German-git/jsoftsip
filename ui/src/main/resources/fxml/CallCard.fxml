@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.jsoftsip.ui.controller.CallCardController"
+      spacing="10">
+
+    <padding>
+        <Insets top="8"
+                right="8"
+                bottom="8"
+                left="8"/>
+    </padding>
+
+    <VBox HBox.hgrow="ALWAYS"
+          spacing="4">
+
+        <HBox fx:id="hboxDestination"
+              spacing="4"
+              alignment="CENTER_LEFT">
+
+            <Label fx:id="lblOrigin"/>
+
+            <Label fx:id="lblDirection"/>
+
+            <Label fx:id="lblDestination"/>
+
+        </HBox>
+
+        <Label fx:id="lblState"/>
+
+        <Label fx:id="lblDuration"/>
+
+    </VBox>
+
+    <Button fx:id="btnAnswer"
+            text="%callcard.answer"
+            prefWidth="70"/>
+
+    <Button fx:id="btnReject"
+            text="%callcard.reject"
+            prefWidth="70"/>
+
+    <Button fx:id="btnHold"
+            prefWidth="70"/>
+
+    <Button fx:id="btnMute"
+            prefWidth="70"/>
+
+    <Button fx:id="btnHangup"
+            prefWidth="70"/>
+
+    <Button fx:id="btnVideo"
+            prefWidth="70"/>
+
+</HBox>

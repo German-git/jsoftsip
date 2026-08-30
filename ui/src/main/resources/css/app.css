@@ -1,0 +1,169 @@
+.root {
+    -fx-font-size: 12px;
+}
+
+/* ===================== Buttons ===================== */
+
+.button {
+    -fx-min-width: 48px;
+    -fx-min-height: 22px;
+    -fx-max-height: 26px;
+    -fx-padding: 4px;
+}
+
+.dialer-numpad {
+    -fx-min-height: 28px;
+    -fx-max-height: 32px;
+    -fx-pref-width: 48px;
+}
+
+.success-button {
+    -fx-background-color: #0d6efd;
+    -fx-text-fill: white;
+}
+
+.danger-button {
+    -fx-background-color: #dc3545;
+    -fx-text-fill: white;
+}
+
+.secondary-button {
+    -fx-background-color: #475569;
+    -fx-text-fill: white;
+}
+
+.positive-button {
+    -fx-background-color: #198754;
+    -fx-text-fill: white;
+}
+
+/* ===================== Account status ===================== */
+
+.account-status-dot {
+    -fx-background-radius: 4;
+    -fx-min-width: 8px;
+    -fx-min-height: 8px;
+    -fx-max-width: 8px;
+    -fx-max-height: 8px;
+}
+
+.account-status-online {
+    -fx-background-color: #198754;
+}
+
+.account-status-offline {
+    -fx-background-color: #6c757d;
+}
+
+.account-status-registering {
+    -fx-background-color: #FFCC00;
+}
+
+/* ===================== History ===================== */
+
+.history-row {
+    -fx-padding: 0 0 12 0;
+}
+
+.history-time {
+    -fx-font-size: 12px;
+}
+
+.history-account {
+    -fx-font-size: 12px;
+}
+
+.history-direction {
+    -fx-font-size: 12px;
+}
+
+.direction-incoming {
+    -fx-fill: #0d6efd;
+    -fx-text-fill: #0d6efd;
+}
+
+.direction-outgoing {
+    -fx-fill: #198754;
+    -fx-text-fill: #198754;
+}
+
+.history-destination {
+    -fx-font-weight: bold;
+}
+
+.history-duration {
+    -fx-font-size: 12px;
+}
+
+.history-result {
+    -fx-font-size: 12px;
+}
+
+.result-answered {
+    -fx-text-fill: #198754;
+}
+
+.result-rejected {
+    -fx-text-fill: #fd7e14;
+}
+
+.result-missed {
+    -fx-text-fill: #dc3545;
+}
+
+.result-failed {
+    -fx-text-fill: #dc3545;
+}
+
+.result-cancelled {
+    -fx-text-fill: #6c757d;
+}
+
+/* ===================== Split pane columns ===================== */
+
+.split-left {
+    -fx-padding: 0 4 0 0;
+}
+
+.split-right {
+    -fx-padding: 0 0 0 4;
+}
+
+/* ===================== Settings dialog ===================== */
+
+.settings-grid {
+    -fx-padding: 15px;
+}
+
+.settings-field {
+    -fx-min-width: 200px;
+}
+
+.settings-device-field {
+    -fx-min-width: 200px;
+    -fx-pref-width: 280px;
+}
+
+.monospace-preview {
+    -fx-font-family: monospace;
+}
+
+/* ===================== Dialer ===================== */
+
+.dialer-grid {
+    -fx-hgap: 4;
+    -fx-vgap: 4;
+}
+
+/* ===================== Account dialog ===================== */
+
+.full-width-field {
+    -fx-max-width: Infinity;
+}
+
+/* ===================== Custom dialogs ===================== */
+
+.dialog-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}

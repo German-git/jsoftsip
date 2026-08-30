@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+
+<TitledPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.jsoftsip.ui.controller.AccountsPaneController"
+            fx:id="accountsTitle"
+            text="%accounts.title"
+            expanded="true">
+
+    <content>
+        <BorderPane>
+
+            <center>
+                <ListView fx:id="accountsListView"/>
+            </center>
+
+            <bottom>
+                <HBox spacing="5"
+                      alignment="CENTER">
+
+                    <BorderPane.margin>
+                        <Insets top="4"/>
+                    </BorderPane.margin>
+
+                    <Button prefWidth="70"
+                            fx:id="btnAdd"/>
+
+                    <Button prefWidth="70"
+                            fx:id="btnEdit"/>
+
+                    <Button prefWidth="70"
+                            fx:id="btnDelete"/>
+
+                </HBox>
+            </bottom>
+
+        </BorderPane>
+    </content>
+
+</TitledPane>

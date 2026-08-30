@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.jsoftsip.ui.controller.AccountDialogController"
+      spacing="10">
+
+    <padding>
+        <Insets top="10"
+                right="10"
+                bottom="10"
+                left="10"/>
+    </padding>
+
+    <GridPane hgap="10"
+              vgap="10">
+
+        <columnConstraints>
+
+            <ColumnConstraints
+                    minWidth="100"/>
+
+            <ColumnConstraints
+                    hgrow="ALWAYS"/>
+
+        </columnConstraints>
+
+        <Label text="%account.dialog.displayName"
+               GridPane.rowIndex="0"
+               GridPane.columnIndex="0"/>
+
+        <TextField fx:id="txtDisplayName"
+                   styleClass="full-width-field"
+                   GridPane.rowIndex="0"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="%account.dialog.username"
+               GridPane.rowIndex="1"
+               GridPane.columnIndex="0"/>
+
+        <TextField fx:id="txtUsername"
+                   styleClass="full-width-field"
+                   GridPane.rowIndex="1"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="%account.dialog.password"
+               GridPane.rowIndex="2"
+               GridPane.columnIndex="0"/>
+
+        <PasswordField fx:id="txtPassword"
+                       styleClass="full-width-field"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="1"/>
+
+        <Label text="%account.dialog.domain"
+               GridPane.rowIndex="3"
+               GridPane.columnIndex="0"/>
+
+        <TextField fx:id="txtDomain"
+                   styleClass="full-width-field"
+                   GridPane.rowIndex="3"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="%account.dialog.transport"
+               GridPane.rowIndex="4"
+               GridPane.columnIndex="0"/>
+
+        <ComboBox fx:id="cmbTransport"
+                  styleClass="full-width-field"
+                  GridPane.rowIndex="4"
+                  GridPane.columnIndex="1"/>
+
+    </GridPane>
+
+    <HBox spacing="10"
+          alignment="CENTER">
+
+        <Button fx:id="btnSave"
+                 prefWidth="70"/>
+
+        <Button fx:id="btnCancel"
+                 prefWidth="70"/>
+
+    </HBox>
+
+</VBox>

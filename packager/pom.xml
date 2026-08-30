@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jsoftsip</groupId>
+        <artifactId>jsoftsip</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>packager</artifactId>
+    <packaging>pom</packaging>
+
+    <properties>
+        <!-- Platform knobs behind properties so a windows profile can be
+             added as a sibling without touching this profile (R12) -->
+        <linux.app.name>JSoftSIP</linux.app.name>
+        <linux.app.module>com.jsoftsip.launcher</linux.app.module>
+        <linux.main.class>com.jsoftsip.launcher.JSoftSipApplication</linux.main.class>
+        <!-- App icon shared by the launcher (window icon, bundled as a
+             module resource) and the packager (jpackage icon option) -->
+        <linux.icon.path>${maven.multiModuleProjectDirectory}/launcher/src/main/resources/icons/jsoftsip-icon-64px.png</linux.icon.path>
+        <!-- Prebuilt jlink runtime image consumed by jpackage through the
+             runtimeImage option, replacing its internal jlink call -->
+        <linux.runtime.image>${project.build.directory}/runtime-image</linux.runtime.image>
+    </properties>
+
+    <!-- jpackage resolves the app modules from the project dependencies
+         (launcher -> ui, core, native-bridge), so they must be declared here -->
+    <dependencies>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>launcher</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>native-bridge</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jsoftsip</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Stage runtime dependencies into target/mods so jpackage can
+                 use them as module path (the panteleyev mojo does not add the
+                 project dependencies to the module path automatically) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-runtime-deps</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/mods</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Linux profile, strictly opt-in: it never activates
+             automatically (an implicit OS-family activation paid
+             staging + jpackage + assembly on every plain build and
+             broke even mvn test on non-amd64 hosts). Run it with an
+             explicit -Plinux -->
+        <profile>
+            <id>linux</id>
+            <build>
+                <plugins>
+                    <!-- Fail fast on non-x64 Linux so the finalName does
+                         not mislabel an ARM build as linux-x64 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-x64-arch</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireOS>
+                                            <arch>amd64</arch>
+                                            <message>This profile builds a linux-x64 package and must run on amd64.</message>
+                                        </requireOS>
+                                    </rules>
+                                    <fail>true</fail>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- jpackage app-image with the launcher module and
+                          JavaFX modules explicitly added to the runtime image.
+
+                          The runtime image is no longer produced by the
+                          internal jlink call of jpackage (uncompressed, no
+                          debug stripping). It is built explicitly with jlink
+                          right below and handed over via the runtimeImage
+                          option,
+                          which keeps the application self-contained while
+                          cutting the image size roughly in half. -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <!-- jlink refuses an existing output directory -->
+                            <execution>
+                                <id>clean-runtime-image</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>rm</executable>
+                                    <arguments>
+                                        <argument>-rf</argument>
+                                        <argument>${linux.runtime.image}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Roots mirror the previous jpackage intent:
+                                 launcher module plus JavaFX plus the SQLite
+                                 driver loaded reflectively via Class.forName.
+                                 The resolved closure reproduces exactly the
+                                 same module set as the previous internal
+                                 jpackage jlink (verified against release). -->
+                            <execution>
+                                <id>build-runtime-image</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/jlink</executable>
+                                    <arguments>
+                                        <argument>--add-modules</argument>
+                                        <argument>${linux.app.module},javafx.controls,javafx.fxml,org.xerial.sqlitejdbc</argument>
+                                        <argument>--module-path</argument>
+                                        <argument>${project.build.directory}/mods${path.separator}${java.home}/jmods</argument>
+                                        <argument>--output</argument>
+                                        <argument>${linux.runtime.image}</argument>
+                                        <!-- Strips native DWARF sections that
+                                             distro jmods ship inside libjvm
+                                             and friends, matching what the
+                                             internal jpackage jlink used to
+                                             do; without it the server VM
+                                             alone grows by hundreds of MB -->
+                                        <argument>--strip-debug</argument>
+                                        <argument>--compress</argument>
+                                        <argument>zip-6</argument>
+                                        <argument>--no-header-files</argument>
+                                        <argument>--no-man-pages</argument>
+                                        <argument>--strip-native-commands</argument>
+                                        <argument>--vm</argument>
+                                        <argument>server</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>linux-app-image</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>APP_IMAGE</type>
+                                    <name>${linux.app.name}</name>
+                                    <appVersion>${project.version}</appVersion>
+                                    <vendor>JSoftSIP</vendor>
+                                    <!-- jpackage accepts the main class only
+                                         as module/mainClass (the main-class
+                                         flag is reserved for main-jar mode) -->
+                                    <module>${linux.app.module}/${linux.main.class}</module>
+                                    <icon>${linux.icon.path}</icon>
+                                    <!-- Consume the prebuilt compressed runtime
+                                         image; addModules/modulePaths are not
+                                         needed because no internal jlink runs -->
+                                    <runtimeImage>${linux.runtime.image}</runtimeImage>
+                                    <destination>${project.build.directory}/jpackage</destination>
+                                    <removeDestination>true</removeDestination>
+                                    <javaOptions>
+                                        <javaOption>-Dfile.encoding=UTF-8</javaOption>
+                                        <javaOption>-XX:+UseG1GC</javaOption>
+                                    </javaOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Tar the jpackage app image after jpackage runs in
+                         the package phase (executions run in declaration order) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>linux-tar-gz</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>src/assembly/linux-tar.xml</descriptor>
+                                    </descriptors>
+                                    <finalName>${linux.app.name}-${project.version}-linux-x64</finalName>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
