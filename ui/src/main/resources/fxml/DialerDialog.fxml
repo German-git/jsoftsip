@@ -18,9 +18,10 @@
 
     <Label fx:id="lblAccount"/>
 
-    <TextField fx:id="txtDestination"
-               promptText="%dialer.prompt"
-               maxWidth="Infinity"/>
+    <ComboBox fx:id="cmbDestination"
+              editable="true"
+              promptText="%dialer.prompt"
+              maxWidth="Infinity"/>
 
     <!-- Container to center the keypad -->
     <HBox alignment="CENTER">

@@ -1,6 +1,7 @@
 package com.jsoftsip.ui.controller;
 
 import com.jsoftsip.core.history.CallHistoryEntry;
+import com.jsoftsip.core.call.CallDirection;
 import com.jsoftsip.core.history.HistoryService;
 import com.jsoftsip.ui.I18n;
 import com.jsoftsip.ui.AppContext;
@@ -10,9 +11,13 @@ import com.jsoftsip.ui.util.CallResultPresentation;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -22,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 public class HistoryPaneController {
 
@@ -56,6 +62,16 @@ public class HistoryPaneController {
 
         historyListView.setCellFactory(listView -> new ListCell<CallHistoryEntry>() {
 
+            private final ContextMenu contextMenu;
+
+            {
+
+                contextMenu = new ContextMenu(
+                    createCopyMenuItem("history.copy.row", this, HistoryPaneController::formatRowData),
+                    createCopyMenuItem("history.copy.destination", this, HistoryPaneController::destinationForCopy),
+                    createCopyMenuItem("history.copy.origin", this, HistoryPaneController::originForCopy));
+            }
+
             @Override
             protected void updateItem(CallHistoryEntry entry, boolean empty) {
 
@@ -67,12 +83,16 @@ public class HistoryPaneController {
 
                     setText(null);
 
+                    setContextMenu(null);
+
                     return;
                 }
 
                 setText(null);
 
                 setGraphic(createRow(entry));
+
+                setContextMenu(contextMenu);
             }
         });
 
@@ -136,7 +156,68 @@ public class HistoryPaneController {
         return row;
     }
 
-    private String formatTime(LocalDateTime startedAt) {
+    private MenuItem createCopyMenuItem(String key, ListCell<CallHistoryEntry> cell,
+                                        Function<CallHistoryEntry, String> textExtractor) {
+
+        MenuItem menuItem = new MenuItem();
+
+        menuItem.textProperty().bind(I18n.createStringBinding(key));
+
+        menuItem.setOnAction(event -> {
+
+            CallHistoryEntry entry = cell.getItem();
+
+            if (entry != null) {
+                copyToClipboard(textExtractor.apply(entry));
+            }
+        });
+
+        return menuItem;
+    }
+
+    private static void copyToClipboard(String text) {
+
+        ClipboardContent content = new ClipboardContent();
+
+        content.putString(text);
+
+        Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    static String formatRowData(CallHistoryEntry entry) {
+
+        CallDirectionPresentation direction = CallDirectionPresentation.forDirection(entry.getDirection());
+
+        CallResultPresentation result = CallResultPresentation.forResult(entry.getResult());
+
+        String participantLine = displayText(entry.getAccountUsername()) + " " + direction.glyph() + " "
+            + displayText(entry.getDestination());
+
+        String resultLine = CallDurationFormatter.format(entry.getDurationSeconds()) + " " + result.displayText();
+
+        return String.join(System.lineSeparator(), formatTime(entry.getStartedAt()), participantLine, resultLine);
+    }
+
+    static String destinationForCopy(CallHistoryEntry entry) {
+
+        return entry.getDirection() == CallDirection.INCOMING
+            ? displayText(entry.getAccountUsername())
+            : displayText(entry.getDestination());
+    }
+
+    static String originForCopy(CallHistoryEntry entry) {
+
+        return entry.getDirection() == CallDirection.INCOMING
+            ? displayText(entry.getDestination())
+            : displayText(entry.getAccountUsername());
+    }
+
+    private static String displayText(String value) {
+
+        return value != null ? value : "";
+    }
+
+    private static String formatTime(LocalDateTime startedAt) {
 
         if (startedAt == null) {
 

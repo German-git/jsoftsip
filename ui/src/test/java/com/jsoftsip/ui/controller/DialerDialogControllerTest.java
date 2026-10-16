@@ -21,6 +21,7 @@ import com.jsoftsip.ui.MockAppContext;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,11 +29,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 
@@ -54,6 +57,8 @@ class DialerDialogControllerTest {
     private DialerDialogController controller;
 
     private TextField txtDestination;
+
+    private ComboBox<String> cmbDestination;
 
     private Button btnCall;
 
@@ -85,9 +90,10 @@ class DialerDialogControllerTest {
         HistoryService historyService = new NoOpHistoryService();
         CallService callService = new DefaultCallService(sipClient, accountService, historyService);
 
-        loadDialer(new MockAppContext(callService, accountService, sipClient), account);
+        loadDialer(new MockAppContext(callService, accountService, historyService, sipClient), account);
     }
 
+    @SuppressWarnings("unchecked")
     private void loadDialer(AppContext context, SipAccount account) {
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/DialerDialog.fxml"));
@@ -104,7 +110,8 @@ class DialerDialogControllerTest {
         }
 
         controller = loader.getController();
-        txtDestination = (TextField) loader.getNamespace().get("txtDestination");
+        cmbDestination = (ComboBox<String>) loader.getNamespace().get("cmbDestination");
+        txtDestination = cmbDestination.getEditor();
         btnCall = (Button) loader.getNamespace().get("btnCall");
         btnHangup = (Button) loader.getNamespace().get("btnHangup");
 
@@ -134,7 +141,7 @@ class DialerDialogControllerTest {
         // the call button and destination are locked, the hangup button is live.
         await(() -> btnCall.isDisabled(), 5, "call button should be disabled once the session is active");
         assertFalse(btnHangup.isDisabled(), "hangup must be enabled while the call is active");
-        assertTrue(txtDestination.isDisabled(), "destination must be disabled while the call is active");
+        assertTrue(cmbDestination.isDisabled(), "destination must be disabled while the call is active");
 
         // Ending the call (remote or local) makes the session inactive and the
         // binding must reset the controls automatically, with no imperative
@@ -143,7 +150,70 @@ class DialerDialogControllerTest {
 
         await(() -> !btnCall.isDisabled(), 5, "call button must reset when the session ends");
         assertTrue(btnHangup.isDisabled(), "hangup must reset when the session ends");
-        assertFalse(txtDestination.isDisabled(), "destination must reset when the session ends");
+        assertFalse(cmbDestination.isDisabled(), "destination must reset when the session ends");
+    }
+
+    @Test
+    void destinationHistoryLoadsOffFxThreadAndShowsEightMostRecentUniqueOutgoingDestinationsForThisAccount()
+        throws Exception {
+
+        SipAccount account = new SipAccount();
+        account.setId(1L);
+        account.setUsername("1001");
+        account.setDomain("demo.org");
+        account.setStatus(AccountStatus.ONLINE);
+
+        LocalDateTime baseTime = LocalDateTime.of(2025, 1, 1, 0, 0);
+        List<CallHistoryEntry> entries = List.of(historyEntry(1L, "older", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(1)),
+                                                 historyEntry(1L, "102", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(2)),
+                                                 historyEntry(1L, "103", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(3)),
+                                                 historyEntry(1L, "104", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(4)),
+                                                 historyEntry(1L, "105", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(5)),
+                                                 historyEntry(1L, "106", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(6)),
+                                                 historyEntry(1L, "107", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(7)),
+                                                 historyEntry(1L, "108", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(8)),
+                                                 historyEntry(1L, "109", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(9)),
+                                                 historyEntry(1L, "108", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(10)),
+                                                 historyEntry(1L, "incoming", CallDirection.INCOMING,
+                                                              baseTime.plusMinutes(11)),
+                                                 historyEntry(2L, "other-account", CallDirection.OUTGOING,
+                                                              baseTime.plusMinutes(12)));
+
+        TrackingHistoryService historyService = new TrackingHistoryService(entries);
+        RecordingSipClient sipClient = new RecordingSipClient(0);
+        AccountService accountService = new FixedAccountService(account);
+        CallService callService = new DefaultCallService(sipClient, accountService, historyService);
+
+        loadDialer(new MockAppContext(callService, accountService, historyService, sipClient), account);
+
+        assertTrue(cmbDestination.isEditable(), "destination combo box must remain editable");
+        assertTrue(historyService.readCompleted.await(5, TimeUnit.SECONDS), "history must be loaded");
+        await(() -> cmbDestination.getItems().size() == 8, 5, "the eight most recent destinations must be shown");
+
+        assertFalse(historyService.readOnFxThread.get(), "history reads must not run on the JavaFX thread");
+        assertEquals(List.of("108", "109", "107", "106", "105", "104", "103", "102"), cmbDestination.getItems(),
+                     "destinations must be unique, outgoing-only, from this account, newest first, and limited to eight");
+    }
+
+    private static CallHistoryEntry historyEntry(long accountId, String destination, CallDirection direction,
+                                                 LocalDateTime startedAt) {
+
+        CallHistoryEntry entry = new CallHistoryEntry();
+        entry.setAccountId(accountId);
+        entry.setDestination(destination);
+        entry.setDirection(direction);
+        entry.setStartedAt(startedAt);
+        return entry;
     }
 
     @Test
@@ -169,7 +239,7 @@ class DialerDialogControllerTest {
         CallService callService = new SwappedLegAccountCallService(sipClient, accountService, historyService,
             legAccount);
 
-        loadDialer(new MockAppContext(callService, accountService, sipClient), account);
+        loadDialer(new MockAppContext(callService, accountService, historyService, sipClient), account);
 
         Platform.runLater(() -> {
 
@@ -221,7 +291,7 @@ class DialerDialogControllerTest {
         CallService callService = new SwappedLegAccountCallService(sipClient, accountService, historyService,
             legAccount);
 
-        loadDialer(new MockAppContext(callService, accountService, sipClient), account);
+        loadDialer(new MockAppContext(callService, accountService, historyService, sipClient), account);
 
         // A ringing incoming leg from the peer lands first in the session
         // that the dialer's outgoing leg joins right after, so a fallback
@@ -267,7 +337,7 @@ class DialerDialogControllerTest {
         EndedThenLiveLegCallService callService = new EndedThenLiveLegCallService(sipClient, accountService,
             historyService);
 
-        loadDialer(new MockAppContext(callService, accountService, sipClient), account);
+        loadDialer(new MockAppContext(callService, accountService, historyService, sipClient), account);
 
         Platform.runLater(() -> {
 
@@ -473,6 +543,40 @@ class DialerDialogControllerTest {
         public void deleteAccount(long id) {
 
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class TrackingHistoryService implements HistoryService {
+
+        private final List<CallHistoryEntry> entries;
+
+        private final CountDownLatch readCompleted = new CountDownLatch(1);
+
+        private final AtomicBoolean readOnFxThread = new AtomicBoolean();
+
+        TrackingHistoryService(List<CallHistoryEntry> entries) {
+
+            this.entries = entries;
+        }
+
+        @Override
+        public void registerFinishedCall(CallLeg call) {
+        }
+
+        @Override
+        public List<CallHistoryEntry> getHistory() {
+
+            readOnFxThread.set(Platform.isFxApplicationThread());
+            readCompleted.countDown();
+            return entries;
+        }
+
+        @Override
+        public void clearAll() {
+        }
+
+        @Override
+        public void addListener(Runnable listener) {
         }
     }
 

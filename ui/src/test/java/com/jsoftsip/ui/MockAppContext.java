@@ -30,6 +30,8 @@ public class MockAppContext implements AppContext {
 
     private final AccountService accountService;
 
+    private final HistoryService historyService;
+
     private final SettingsService settingsService;
 
     private final ExecutorService uiExecutor;
@@ -50,17 +52,28 @@ public class MockAppContext implements AppContext {
         this(sipClient, callService, accountService, null, UiTaskExecutor.global());
     }
 
+    public MockAppContext(CallService callService, AccountService accountService, HistoryService historyService,
+                          SipClient sipClient) {
+        this(sipClient, callService, accountService, null, UiTaskExecutor.global(), historyService);
+    }
+
     public MockAppContext(CallService callService, SettingsService settingsService, SipClient sipClient) {
         this(sipClient, callService, null, settingsService, UiTaskExecutor.global());
     }
 
     private MockAppContext(SipClient sipClient, CallService callService, AccountService accountService,
                            SettingsService settingsService, ExecutorService uiExecutor) {
+        this(sipClient, callService, accountService, settingsService, uiExecutor, null);
+    }
+
+    private MockAppContext(SipClient sipClient, CallService callService, AccountService accountService,
+                           SettingsService settingsService, ExecutorService uiExecutor, HistoryService historyService) {
         this.sipClient = sipClient;
         this.callService = callService;
         this.accountService = accountService;
         this.settingsService = settingsService;
         this.uiExecutor = uiExecutor;
+        this.historyService = historyService;
     }
 
     @Override
@@ -85,6 +98,11 @@ public class MockAppContext implements AppContext {
 
     @Override
     public HistoryService getHistoryService() {
+
+        if (historyService != null) {
+            return historyService;
+        }
+
         throw new UnsupportedOperationException();
     }
 

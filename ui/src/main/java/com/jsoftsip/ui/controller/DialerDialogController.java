@@ -2,11 +2,14 @@ package com.jsoftsip.ui.controller;
 
 import com.jsoftsip.core.account.AccountStatus;
 import com.jsoftsip.core.account.SipAccount;
+import com.jsoftsip.core.call.CallDirection;
 import com.jsoftsip.core.call.CallLeg;
 import com.jsoftsip.core.call.CallSession;
 import com.jsoftsip.core.call.CallSessionListener;
 import com.jsoftsip.core.call.CallService;
 import com.jsoftsip.core.call.CallState;
+import com.jsoftsip.core.history.CallHistoryEntry;
+import com.jsoftsip.core.history.HistoryService;
 import com.jsoftsip.core.service.AccountService;
 import com.jsoftsip.core.logging.JSoftSipLog;
 import com.jsoftsip.ui.AppContext;
@@ -19,22 +22,29 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.kordamp.ikonli.bootstrapicons.BootstrapIcons;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 public class DialerDialogController {
 
+    private static final int MAX_RECENT_DESTINATIONS = 8;
+
     @FXML
     private Label lblAccount;
 
     @FXML
-    private TextField txtDestination;
+    private ComboBox<String> cmbDestination;
 
     @FXML
     private Button btnCall;
@@ -96,13 +106,25 @@ public class DialerDialogController {
 
     private final CallService callService;
 
+    private final HistoryService historyService;
+
     private final ExecutorService uiExecutor;
+
+    // Destinations dialed in this dialog are shown immediately, before the
+    // call-history service persists the finished call.
+    private final List<String> destinationsDialedInDialog = new ArrayList<>();
+
+    private List<String> persistedRecentDestinations = List.of();
+
+    private volatile boolean disposed;
 
     public DialerDialogController(AppContext context) {
 
         this.accountService = context.getAccountService();
 
         this.callService = context.getCallService();
+
+        this.historyService = context.getHistoryService();
 
         this.uiExecutor = context.getUiExecutor();
     }
@@ -119,7 +141,7 @@ public class DialerDialogController {
 
         IconFactory.configureI18nDangerButton(btnHangup, BootstrapIcons.TELEPHONE_X_FILL, "dialer.hangup.tooltip");
 
-        txtDestination.promptTextProperty().bind(I18n.createStringBinding("dialer.prompt"));
+        cmbDestination.getEditor().promptTextProperty().bind(I18n.createStringBinding("dialer.prompt"));
 
         configureDialPad();
         // TODO
@@ -134,7 +156,7 @@ public class DialerDialogController {
         // their own.
         btnCall.disableProperty().bind(sessionActive);
         btnHangup.disableProperty().bind(sessionActive.not());
-        txtDestination.disableProperty().bind(sessionActive);
+        cmbDestination.disableProperty().bind(sessionActive);
     }
 
     public void setAccount(SipAccount account) {
@@ -142,11 +164,13 @@ public class DialerDialogController {
         this.account = account;
 
         lblAccount.setText(AccountIdentityFormatter.formatInline(account));
+
+        loadRecentDestinations(account.getId());
     }
 
     private void startCall() {
 
-        String destination = txtDestination.getText();
+        String destination = cmbDestination.getEditor().getText();
 
         if (destination == null || destination.isBlank()) {
 
@@ -163,6 +187,8 @@ public class DialerDialogController {
 
             return;
         }
+
+        rememberDestination(destination);
 
         uiExecutor.execute(() -> {
 
@@ -260,7 +286,82 @@ public class DialerDialogController {
 
     public void dispose() {
 
+        disposed = true;
+
         detachSessionObserver();
+    }
+
+    private void loadRecentDestinations(long accountId) {
+
+        uiExecutor.execute(() -> {
+
+            List<String> destinations = List.of();
+
+            try {
+
+                destinations = findRecentDestinations(historyService.getHistory(), accountId);
+
+            } catch (RuntimeException exception) {
+
+                JSoftSipLog.warn("Failed to load dialer destination history", exception);
+            }
+
+            List<String> loadedDestinations = destinations;
+
+            Platform.runLater(() -> {
+
+                if (disposed) {
+                    return;
+                }
+
+                persistedRecentDestinations = loadedDestinations;
+
+                refreshDestinationSuggestions();
+            });
+        });
+    }
+
+    private static List<String> findRecentDestinations(List<CallHistoryEntry> history, long accountId) {
+
+        if (history == null || history.isEmpty()) {
+            return List.of();
+        }
+
+        return history.stream().filter(Objects::nonNull).filter(entry -> entry.getDirection() == CallDirection.OUTGOING)
+                      .filter(entry -> Objects.equals(entry.getAccountId(), accountId))
+                      .filter(entry -> entry.getDestination() != null && !entry.getDestination().isBlank())
+                      .sorted(Comparator.comparing(DialerDialogController::historyTimestamp,
+                                                   Comparator.nullsLast(Comparator.reverseOrder())))
+                      .map(CallHistoryEntry::getDestination).distinct().limit(MAX_RECENT_DESTINATIONS).toList();
+    }
+
+    private static LocalDateTime historyTimestamp(CallHistoryEntry entry) {
+
+        return entry.getStartedAt() != null ? entry.getStartedAt() : entry.getEndedAt();
+    }
+
+    private void rememberDestination(String destination) {
+
+        destinationsDialedInDialog.remove(destination);
+
+        destinationsDialedInDialog.add(0, destination);
+
+        refreshDestinationSuggestions();
+    }
+
+    private void refreshDestinationSuggestions() {
+
+        String editorText = cmbDestination.getEditor().getText();
+
+        LinkedHashSet<String> destinations = new LinkedHashSet<>(destinationsDialedInDialog);
+
+        destinations.addAll(persistedRecentDestinations);
+
+        cmbDestination.getItems().setAll(destinations.stream().limit(MAX_RECENT_DESTINATIONS).toList());
+
+        if (!Objects.equals(cmbDestination.getEditor().getText(), editorText)) {
+            cmbDestination.getEditor().setText(editorText);
+        }
     }
 
     private void configureDialPad() {
@@ -289,23 +390,23 @@ public class DialerDialogController {
 
     private void appendText(String text) {
 
-        txtDestination.appendText(text);
+        cmbDestination.getEditor().appendText(text);
 
-        txtDestination.requestFocus();
+        cmbDestination.getEditor().requestFocus();
 
-        txtDestination.positionCaret(txtDestination.getText().length());
+        cmbDestination.getEditor().positionCaret(cmbDestination.getEditor().getText().length());
     }
 
     private void deleteCharacter() {
 
-        String text = txtDestination.getText();
+        String text = cmbDestination.getEditor().getText();
 
         if (text.isEmpty()) {
             return;
         }
 
-        txtDestination.setText(text.substring(0, text.length() - 1));
+        cmbDestination.getEditor().setText(text.substring(0, text.length() - 1));
 
-        txtDestination.positionCaret(txtDestination.getText().length());
+        cmbDestination.getEditor().positionCaret(cmbDestination.getEditor().getText().length());
     }
 }
