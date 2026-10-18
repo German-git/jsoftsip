@@ -110,15 +110,29 @@ mvn clean package -Plinux -Dmaven.test.skip=true
    - `--no-header-files --no-man-pages --strip-native-commands` drop content a bundled application never uses
    - The resolved module set is identical to the one the internal jpackage jlink used to produce (verified against the image `release` file)
 3. **Create app image**: `jpackage-maven-plugin` packages the app image consuming the prebuilt runtime through its `runtimeImage` option, so no second, uncompressed jlink runs inside jpackage
-4. **Tar the image**: `maven-assembly-plugin` creates a `.tar.gz` from the app image
+4. **Create the generic Linux installer archive**: `maven-assembly-plugin` packages the app image together with `install.sh`, `uninstall.sh`, the desktop entry, and the license
+5. **Stage installation artifacts**: the final package-phase step copies the complete distribution to `packager/target/JSoftSIP/` and creates `packager/target/arch/` with a checksummed `PKGBUILD`, the desktop entry, and the versioned application archive
 
-The resulting self-contained image is about 80 MB (down from roughly 133 MB with the previous configuration). The `.tar.gz` is larger than before because the compressed runtime does not compress again; the installed footprint is what shrinks.
+The resulting self-contained app image is about 123 MiB in the current Linux x64 build; the `.tar.gz` is about 70 MiB. Exact sizes vary with the JDK and dependency versions. The runtime is compressed by `jlink`, so the installed image is smaller than the earlier uncompressed package.
 
 ### Output
 
 ```
 packager/target/JSoftSIP-0.0.1-linux-x64.tar.gz
 ```
+
+The staging directory `packager/target/JSoftSIP/` contains `bin/`, `lib/`,
+`install.sh`, `uninstall.sh`, `jsoftsip.desktop`, and `LICENSE`. For a normal
+Linux installation, extract the archive and run `sudo ./install.sh` from its
+`JSoftSIP/` directory. The installer places an uninstaller at
+`/opt/JSoftSIP/uninstall.sh`; run it with `sudo` to remove the installed
+application files. Both scripts leave per-user settings under
+`~/.config/jsoftsip` or `$XDG_CONFIG_HOME/jsoftsip` untouched.
+
+For Arch Linux, copy or use `packager/target/arch/` and build/install with
+`makepkg -si`. The generated PKGBUILD installs under `/opt/JSoftSIP/`, uses the
+bundled runtime, and declares Baresip and the required native desktop libraries
+as dependencies.
 
 The `linux` profile enforces an amd64 build host via maven-enforcer (`requireOS arch=amd64`), failing fast on non-x64 machines so the `linux-x64` artifact name can never mislabel ARM output.
 
@@ -129,9 +143,14 @@ JSoftSIP/
 ├── bin/
 │   └── JSoftSIP          # Launcher script
 ├── lib/
-│   ├── modules           # Trimmed JVM via jlink
-│   └── *.jar             # Application and runtime JARs
-└── ...
+│   ├── app/               # jpackage launcher configuration
+│   ├── runtime/           # Trimmed jlink runtime
+│   ├── JSoftSIP.png
+│   └── libapplauncher.so
+├── install.sh
+├── uninstall.sh
+├── jsoftsip.desktop
+└── LICENSE
 ```
 
 ### JVM Trimming

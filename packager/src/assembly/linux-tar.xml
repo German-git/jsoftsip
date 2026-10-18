@@ -15,5 +15,30 @@
                 <include>JSoftSIP/**/*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/main/dist/linux</directory>
+            <outputDirectory>/JSoftSIP</outputDirectory>
+            <fileMode>0755</fileMode>
+            <includes>
+                <include>install.sh</include>
+                <include>uninstall.sh</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/main/dist/linux</directory>
+            <outputDirectory>/JSoftSIP</outputDirectory>
+            <fileMode>0644</fileMode>
+            <includes>
+                <include>jsoftsip.desktop</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${maven.multiModuleProjectDirectory}</directory>
+            <outputDirectory>/JSoftSIP</outputDirectory>
+            <fileMode>0644</fileMode>
+            <includes>
+                <include>LICENSE</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

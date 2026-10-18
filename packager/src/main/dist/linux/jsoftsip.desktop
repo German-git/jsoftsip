@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=JSoftSIP
+Comment=SIP softphone
+Exec=/usr/bin/JSoftSIP
+Icon=jsoftsip
+Terminal=false
+Categories=Network;Telephony;
+StartupWMClass=JSoftSIP

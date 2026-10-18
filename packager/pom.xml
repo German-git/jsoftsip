@@ -230,6 +230,68 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <!-- Final package-phase step: stage the app image beside the
+                         installer scripts and generate a self-contained Arch
+                         build directory using checksums of the produced files. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>stage-linux-installers-and-arch-package</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <delete dir="${project.build.directory}/${linux.app.name}" quiet="true"/>
+                                        <exec executable="cp" failonerror="true">
+                                            <arg value="-a"/>
+                                            <arg value="${project.build.directory}/jpackage/${linux.app.name}"/>
+                                            <arg value="${project.build.directory}/${linux.app.name}"/>
+                                        </exec>
+
+                                        <copy file="${project.basedir}/src/main/dist/linux/install.sh"
+                                              tofile="${project.build.directory}/${linux.app.name}/install.sh"/>
+                                        <copy file="${project.basedir}/src/main/dist/linux/uninstall.sh"
+                                              tofile="${project.build.directory}/${linux.app.name}/uninstall.sh"/>
+                                        <copy file="${project.basedir}/src/main/dist/linux/jsoftsip.desktop"
+                                              tofile="${project.build.directory}/${linux.app.name}/jsoftsip.desktop"/>
+                                        <copy file="${maven.multiModuleProjectDirectory}/LICENSE"
+                                              tofile="${project.build.directory}/${linux.app.name}/LICENSE"/>
+                                        <chmod file="${project.build.directory}/${linux.app.name}/install.sh"
+                                               perm="755"/>
+                                        <chmod file="${project.build.directory}/${linux.app.name}/uninstall.sh"
+                                               perm="755"/>
+
+                                        <delete dir="${project.build.directory}/arch" quiet="true"/>
+                                        <mkdir dir="${project.build.directory}/arch"/>
+                                        <copy file="${project.build.directory}/${linux.app.name}-${project.version}-linux-x64.tar.gz"
+                                              todir="${project.build.directory}/arch"/>
+                                        <copy file="${project.basedir}/src/main/dist/linux/jsoftsip.desktop"
+                                              todir="${project.build.directory}/arch"/>
+                                        <copy file="${project.basedir}/src/main/dist/arch/README.md"
+                                              todir="${project.build.directory}/arch"/>
+
+                                        <checksum file="${project.build.directory}/arch/${linux.app.name}-${project.version}-linux-x64.tar.gz"
+                                                  algorithm="SHA-256" property="jsoftsip.archive.sha256"/>
+                                        <checksum file="${project.build.directory}/arch/jsoftsip.desktop"
+                                                  algorithm="SHA-256" property="jsoftsip.desktop.sha256"/>
+                                        <copy file="${project.basedir}/src/main/dist/arch/PKGBUILD.in"
+                                              tofile="${project.build.directory}/arch/PKGBUILD">
+                                            <filterset>
+                                                <filter token="VERSION" value="${project.version}"/>
+                                                <filter token="ARCHIVE_SHA256" value="${jsoftsip.archive.sha256}"/>
+                                                <filter token="DESKTOP_SHA256" value="${jsoftsip.desktop.sha256}"/>
+                                            </filterset>
+                                        </copy>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>

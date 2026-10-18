@@ -75,7 +75,16 @@ This generates the file:
 packager/target/JSoftSIP-0.0.1-linux-x64.tar.gz
 ```
 
-The compressed archive contains an application image with a trimmed JVM via `jlink`. Baresip **is not included** in the package; it must be installed on the target system.
+The archive contains the application image with a trimmed, bundled runtime, plus `install.sh`, `uninstall.sh`, the desktop entry, and the license. On other Linux distributions, extract it and run:
+
+```bash
+cd JSoftSIP
+sudo ./install.sh
+```
+
+After installation, remove it with `sudo /opt/JSoftSIP/uninstall.sh`. The scripts only manage the application under `/opt/JSoftSIP` and its launcher, desktop entry, icon, and license; user settings under `~/.config/jsoftsip` (or `$XDG_CONFIG_HOME/jsoftsip`) are retained. They do not install a system Java or change `PATH`.
+
+The profile also generates `packager/target/arch/` with a versioned source archive, checksummed `PKGBUILD`, desktop entry, and build instructions. On Arch Linux, run `makepkg -si` from that directory. Baresip **is not bundled** and remains a system dependency.
 
 > **Note on native image**: An attempt was made to generate a native image with GraalVM, which was not successful due to incompatibilities between JavaFX and the native-image JNI runtime. For more details, see [`docs/native-image-attempt.md`](docs/native-image-attempt.md).
 
